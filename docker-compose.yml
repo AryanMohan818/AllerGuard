@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # 1. Open-source local AI inference engine
+  ollama:
+    image: ollama/ollama:latest
+    container_name: allerguard-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+  # 2. FastAPI Backend
+  backend:
+    build: ./backend
+    container_name: allerguard-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - MODEL_NAME=gemma2:2b
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  # 3. React Frontend
+  frontend:
+    build: ./frontend
+    container_name: allerguard-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  # Named volume to ensure Gemma 2 weights are saved permanently on your disk
+  ollama_data:
